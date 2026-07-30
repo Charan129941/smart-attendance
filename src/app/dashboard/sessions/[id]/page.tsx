@@ -10,6 +10,7 @@ import OverrideModal from '@/components/OverrideModal';
 import ManualAttendanceModal from '@/components/ManualAttendanceModal';
 import EditSessionModal from '@/components/EditSessionModal';
 import { useRouter } from 'next/navigation';
+import { haversine } from '@/lib/geo';
 
 export default function ActiveSessionPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
