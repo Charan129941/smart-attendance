@@ -163,13 +163,10 @@ export default function ActiveSessionPage({ params }: { params: Promise<{ id: st
     }
   };
 
-  if (loading) return <div className="flex justify-center items-center h-64"><span className="spinner"></span></div>;
-  if (error || !session) return <div className="badge-red p-4 rounded">{error || 'Session not found'}</div>;
-
-  const isActive = session.status === 'active';
-
   // --- Cluster Detection ---
   const clusterInfo = useMemo(() => {
+    if (!session || !submissions) return null;
+
     // Only check non-manual, pending submissions with location data
     const pendingWithLocation = submissions.filter(
       s => !s.isManual && s.latitude && s.longitude && (!s.facultyDecision || s.facultyDecision === 'pending')
@@ -231,6 +228,13 @@ export default function ActiveSessionPage({ params }: { params: Promise<{ id: st
       submissionIds: biggest.map(s => s.id),
     };
   }, [submissions, session]);
+
+  if (loading) return <div className="flex justify-center items-center h-64"><span className="spinner"></span></div>;
+  if (error || !session) return <div className="badge-red p-4 rounded">{error || 'Session not found'}</div>;
+
+  const isActive = session.status === 'active';
+
+
 
   const handleBulkApprove = async () => {
     if (!clusterInfo) return;
