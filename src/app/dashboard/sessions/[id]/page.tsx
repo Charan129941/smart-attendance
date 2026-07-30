@@ -10,7 +10,7 @@ import OverrideModal from '@/components/OverrideModal';
 import ManualAttendanceModal from '@/components/ManualAttendanceModal';
 import EditSessionModal from '@/components/EditSessionModal';
 import { useRouter } from 'next/navigation';
-import { haversine } from '@/lib/geo';
+import { haversineDistance } from '@/lib/geo';
 
 export default function ActiveSessionPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -198,7 +198,7 @@ export default function ActiveSessionPage({ params }: { params: Promise<{ id: st
         const cur = queue.shift()!;
         for (let j = 0; j < pendingWithLocation.length; j++) {
           if (visited.has(j)) continue;
-          const dist = haversine(
+          const dist = haversineDistance(
             pendingWithLocation[cur].latitude!, pendingWithLocation[cur].longitude!,
             pendingWithLocation[j].latitude!, pendingWithLocation[j].longitude!
           );
@@ -220,7 +220,7 @@ export default function ActiveSessionPage({ params }: { params: Promise<{ id: st
     // Calculate cluster centroid distance from base
     const avgLat = biggest.reduce((s, m) => s + m.latitude!, 0) / biggest.length;
     const avgLng = biggest.reduce((s, m) => s + m.longitude!, 0) / biggest.length;
-    const distFromBase = haversine(session.baseLat, session.baseLng, avgLat, avgLng);
+    const distFromBase = haversineDistance(session.baseLat, session.baseLng, avgLat, avgLng);
 
     // Only show if the cluster is somewhat far from base (>15m)
     if (distFromBase < 15) return null;
