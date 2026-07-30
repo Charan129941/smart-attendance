@@ -146,6 +146,12 @@ export default function ActiveSessionPage({ params }: { params: Promise<{ id: st
   return (
     <div className="animate-fade-in">
       {/* Top Bar */}
+      <button 
+        onClick={() => router.push('/dashboard')} 
+        className="text-muted hover:text-primary mb-4 flex items-center gap-2 text-sm font-medium transition-colors"
+      >
+        <span>←</span> Back to Dashboard
+      </button>
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
         <div>
           <div className="flex items-center gap-3 mb-1">
