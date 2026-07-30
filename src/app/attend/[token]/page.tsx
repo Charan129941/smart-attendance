@@ -9,7 +9,7 @@ export default function StudentAttendancePage({ params }: { params: Promise<{ to
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [sessionInfo, setSessionInfo] = useState<{className: string, subject: string, period: number} | null>(null);
+  const [sessionInfo, setSessionInfo] = useState<{className: string, subject: string, period: string} | null>(null);
   
   const [name, setName] = useState('');
   const [enrollment, setEnrollment] = useState('');
