@@ -111,3 +111,34 @@ export async function PATCH(
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
 }
+
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const { id } = await params;
+
+    const attendanceSession = await prisma.attendanceSession.findUnique({
+      where: { id, facultyId: session.user.id },
+    });
+
+    if (!attendanceSession) {
+      return NextResponse.json({ success: false, error: 'Session not found' }, { status: 404 });
+    }
+
+    // Cascade delete is set in schema, so this will remove all related records
+    await prisma.attendanceSession.delete({
+      where: { id },
+    });
+
+    return NextResponse.json({ success: true, message: 'Session deleted successfully' });
+  } catch (error: any) {
+    return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+  }
+}

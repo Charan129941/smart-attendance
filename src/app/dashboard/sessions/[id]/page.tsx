@@ -8,6 +8,7 @@ import SubmissionsTable from '@/components/SubmissionsTable';
 import FilterBar from '@/components/FilterBar';
 import OverrideModal from '@/components/OverrideModal';
 import ManualAttendanceModal from '@/components/ManualAttendanceModal';
+import EditSessionModal from '@/components/EditSessionModal';
 import { useRouter } from 'next/navigation';
 
 export default function ActiveSessionPage({ params }: { params: Promise<{ id: string }> }) {
@@ -28,6 +29,7 @@ export default function ActiveSessionPage({ params }: { params: Promise<{ id: st
   
   const [overrideTarget, setOverrideTarget] = useState<AttendanceSubmission | null>(null);
   const [showManualModal, setShowManualModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
 
   const fetchSessionData = async () => {
     try {
@@ -124,6 +126,40 @@ export default function ActiveSessionPage({ params }: { params: Promise<{ id: st
     window.location.href = `/api/sessions/${id}/export`;
   };
 
+  const handleEditSession = async (data: { className: string; section: string; subject: string; date: string; period: string; notes: string }) => {
+    try {
+      const res = await fetch(`/api/sessions/${id}/details`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+      if (res.ok) {
+        setShowEditModal(false);
+        fetchSessionData();
+      } else {
+        const result = await res.json();
+        alert(result.error || 'Failed to update session');
+      }
+    } catch (err) {
+      alert('Failed to update session');
+    }
+  };
+
+  const handleDeleteSession = async () => {
+    if (!confirm('Are you sure you want to permanently delete this session?\n\nThis will remove ALL attendance data, submissions, and records. This cannot be undone.')) return;
+    try {
+      const res = await fetch(`/api/sessions/${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        router.push('/dashboard');
+      } else {
+        const data = await res.json();
+        alert(data.error || 'Failed to delete session');
+      }
+    } catch (err) {
+      alert('Failed to delete session');
+    }
+  };
+
   if (loading) return <div className="flex justify-center items-center h-64"><span className="spinner"></span></div>;
   if (error || !session) return <div className="badge-red p-4 rounded">{error || 'Session not found'}</div>;
 
@@ -167,11 +203,13 @@ export default function ActiveSessionPage({ params }: { params: Promise<{ id: st
           </div>
         </div>
 
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
+          <button className="btn btn-ghost" onClick={() => setShowEditModal(true)}>✏️ Edit</button>
           <button className="btn btn-secondary" onClick={handleExport}>Export Excel</button>
           {isActive && (
             <button className="btn btn-danger" onClick={handleEndSession}>End Session</button>
           )}
+          <button className="btn btn-ghost" style={{ color: 'var(--color-danger)' }} onClick={handleDeleteSession}>🗑️ Delete</button>
         </div>
       </div>
 
@@ -235,6 +273,22 @@ export default function ActiveSessionPage({ params }: { params: Promise<{ id: st
         <ManualAttendanceModal 
           onClose={() => setShowManualModal(false)}
           onSave={handleManual}
+        />
+      )}
+
+      {showEditModal && session && (
+        <EditSessionModal
+          session={{
+            id: session.id,
+            className: session.className,
+            section: session.section,
+            subject: session.subject,
+            date: session.date,
+            period: session.period,
+            notes: session.notes,
+          }}
+          onClose={() => setShowEditModal(false)}
+          onSave={handleEditSession}
         />
       )}
     </div>

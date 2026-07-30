@@ -84,6 +84,12 @@ export default function CreateSessionPage() {
 
   return (
     <div className="max-w-2xl mx-auto">
+      <button 
+        onClick={() => router.push('/dashboard')} 
+        className="text-muted hover:text-primary mb-4 flex items-center gap-2 text-sm font-medium transition-colors"
+      >
+        <span>←</span> Back to Dashboard
+      </button>
       <div className="mb-8">
         <h1 className="text-2xl font-bold mb-2">Create New Session</h1>
         <div className="flex gap-2 text-sm">
