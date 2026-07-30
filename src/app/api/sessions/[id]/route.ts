@@ -34,6 +34,28 @@ export async function GET(
       className: attendanceSession.class.name,
       section: attendanceSession.class.section,
       subject: attendanceSession.subject.name,
+      submissions: [
+        ...attendanceSession.submissions.map(s => ({ ...s, isManual: false })),
+        ...attendanceSession.manualAttendances.map(m => ({
+          id: m.id,
+          sessionId: m.sessionId,
+          name: m.name,
+          enrollmentNumber: m.enrollmentNumber,
+          latitude: null,
+          longitude: null,
+          accuracy: null,
+          sampleCount: 0,
+          distanceFromBase: null,
+          browserTimestamp: m.createdAt,
+          serverTimestamp: m.createdAt,
+          autoRiskScore: 0,
+          autoRiskColor: 'green',
+          facultyRiskColor: null,
+          facultyDecision: m.status === 'present' ? 'approved' : 'rejected',
+          remarks: m.remarks,
+          isManual: true,
+        }))
+      ]
     };
 
     return NextResponse.json({ success: true, data: mappedSession });

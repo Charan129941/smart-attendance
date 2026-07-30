@@ -39,7 +39,7 @@ export function evaluateRisk(
   const thresholds = context.thresholds || DEFAULT_RISK_THRESHOLDS;
 
   // If no location data, assign maximum risk
-  if (submission.latitude === null || submission.longitude === null) {
+  if (submission.latitude == null || submission.longitude == null) {
     return {
       totalScore: 85,
       color: 'red',
