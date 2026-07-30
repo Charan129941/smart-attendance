@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db';
 import { verifyQrToken } from '@/lib/qr';
 import { averageSamples } from '@/lib/geo';
 import { evaluateRisk } from '@/lib/risk-engine';
+import { cookies } from 'next/headers';
 
 export async function POST(req: NextRequest) {
   try {
@@ -27,6 +28,21 @@ export async function POST(req: NextRequest) {
     const payload = verifyQrToken(token);
     if (!payload) {
       return NextResponse.json({ success: false, error: 'Invalid or tampered token' }, { status: 400 });
+    }
+
+    const cookieStore = await cookies();
+    const deviceCookieName = `attendance_device_${payload.sessionId}`;
+    if (cookieStore.has(deviceCookieName)) {
+      await prisma.suspiciousAttempt.create({
+        data: {
+          sessionId: payload.sessionId,
+          enrollmentNumber,
+          name,
+          reason: 'duplicate_device',
+          userAgent,
+        },
+      });
+      return NextResponse.json({ success: false, error: 'Device already used to mark attendance for this session.' }, { status: 403 });
     }
 
     if (Date.now() > payload.expiresAt) {
@@ -181,7 +197,7 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       data: {
         riskColor: riskResult.color,
@@ -190,6 +206,15 @@ export async function POST(req: NextRequest) {
         submissionId: newSubmission.id,
       },
     });
+
+    response.cookies.set(deviceCookieName, 'true', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 60 * 60 * 2 // 2 hours
+    });
+
+    return response;
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }

@@ -14,7 +14,7 @@ export async function POST(
 
     const { id } = await params;
     const body = await req.json();
-    const { submissionId, newRiskColor, newDecision, reason } = body;
+    const { submissionId, riskColor: newRiskColor, decision: newDecision, reason } = body;
 
     const attendanceSession = await prisma.attendanceSession.findUnique({
       where: { id, facultyId: session.user.id },

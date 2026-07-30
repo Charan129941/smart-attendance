@@ -41,9 +41,9 @@ export default function OverrideModal({ submission, onClose, onSave }: OverrideM
               value={riskColor}
               onChange={(e) => setRiskColor(e.target.value as RiskColor)}
             >
-              <option value="GREEN">Green (Safe)</option>
-              <option value="ORANGE">Orange (Warning)</option>
-              <option value="RED">Red (Danger)</option>
+              <option value="green">Green (Safe)</option>
+              <option value="orange">Orange (Warning)</option>
+              <option value="red">Red (Danger)</option>
             </select>
           </div>
 
