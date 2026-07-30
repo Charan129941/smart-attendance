@@ -95,7 +95,7 @@ export default function StudentAttendancePage({ params }: { params: Promise<{ to
       
       if (!res.ok) {
         const data = await res.json();
-        throw new Error(data.message || 'Failed to submit attendance');
+        throw new Error(data.error || data.message || 'Failed to submit attendance');
       }
       
       const result = await res.json();
