@@ -408,7 +408,7 @@ export default function ActiveSessionPage({ params }: { params: Promise<{ id: st
             subject: session.subject,
             date: session.date,
             period: session.period,
-            notes: session.notes,
+            notes: session.notes || '',
           }}
           onClose={() => setShowEditModal(false)}
           onSave={handleEditSession}
