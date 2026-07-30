@@ -55,8 +55,10 @@ export default function CreateSessionPage() {
           qrRefreshInterval: parseInt(formData.refreshInterval),
           sessionDuration: parseInt(formData.duration),
           riskThresholds: {
-            green: parseInt(formData.greenThreshold),
-            orange: parseInt(formData.orangeThreshold)
+            greenMaxMeters: parseInt(formData.greenThreshold),
+            orangeMaxMeters: parseInt(formData.orangeThreshold),
+            greenMaxScore: 30,
+            orangeMaxScore: 60,
           }
         },
         baseLat: location.lat,

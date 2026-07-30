@@ -36,7 +36,13 @@ export function evaluateRisk(
   context: SessionContext
 ): RiskResult {
   const factors: RiskFactor[] = [];
-  const thresholds = context.thresholds || DEFAULT_RISK_THRESHOLDS;
+  const thresholds = {
+    ...DEFAULT_RISK_THRESHOLDS,
+    ...context.thresholds,
+    // Support legacy/broken session configurations where keys were 'green' and 'orange'
+    ...(context.thresholds && (context.thresholds as any).green !== undefined ? { greenMaxMeters: (context.thresholds as any).green } : {}),
+    ...(context.thresholds && (context.thresholds as any).orange !== undefined ? { orangeMaxMeters: (context.thresholds as any).orange } : {}),
+  };
 
   // If no location data, assign maximum risk
   if (submission.latitude == null || submission.longitude == null) {
