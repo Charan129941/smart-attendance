@@ -1,0 +1,269 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// =====================================================
+// Faculty/Admin Users
+// =====================================================
+model User {
+  id             String   @id @default(cuid())
+  email          String   @unique
+  name           String
+  passwordHash   String
+  role           String   @default("faculty") // faculty | admin
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  sessions          AttendanceSession[]
+  manualAttendances ManualAttendance[]
+  riskOverrides     RiskOverride[]
+  exports           ExportHistory[]
+}
+
+// =====================================================
+// Class/Section
+// =====================================================
+model Class {
+  id        String   @id @default(cuid())
+  name      String   // e.g., "B.Tech CSE"
+  section   String   // e.g., "A"
+  year      Int?     // e.g., 2
+  createdAt DateTime @default(now())
+
+  sessions AttendanceSession[]
+
+  @@unique([name, section])
+}
+
+// =====================================================
+// Subject
+// =====================================================
+model Subject {
+  id        String   @id @default(cuid())
+  name      String   // e.g., "Data Structures"
+  code      String?  // e.g., "CS201"
+  createdAt DateTime @default(now())
+
+  sessions AttendanceSession[]
+
+  @@unique([name])
+}
+
+// =====================================================
+// Attendance Session
+// =====================================================
+model AttendanceSession {
+  id                  String   @id @default(cuid())
+  classId             String
+  subjectId           String
+  facultyId           String
+  date                String   // YYYY-MM-DD
+  period              String   // e.g., "Period 1", "9:00-10:00"
+  notes               String?
+  status              String   @default("active") // active | paused | ended
+
+  // Faculty base location
+  baseLat             Float
+  baseLng             Float
+  baseAccuracy        Float
+  baseLocationSamples Int      @default(0)
+
+  // Configuration (stored as JSON string)
+  qrRefreshInterval   Int      @default(60)    // seconds
+  sessionDuration     Int      @default(60)    // minutes
+  riskThresholdsJson  String?  // JSON: RiskThresholds
+
+  // Current QR version counter
+  currentQrVersion    Int      @default(0)
+
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  endedAt             DateTime?
+
+  // Relations
+  class               Class    @relation(fields: [classId], references: [id])
+  subject             Subject  @relation(fields: [subjectId], references: [id])
+  faculty             User     @relation(fields: [facultyId], references: [id])
+
+  qrVersions          QrVersion[]
+  submissions         Submission[]
+  manualAttendances   ManualAttendance[]
+  suspiciousAttempts  SuspiciousAttempt[]
+  exports             ExportHistory[]
+
+  @@index([status])
+  @@index([date])
+  @@index([facultyId])
+}
+
+// =====================================================
+// QR Version (each rotation creates a new version)
+// =====================================================
+model QrVersion {
+  id           String   @id @default(cuid())
+  sessionId    String
+  version      Int
+  tokenHash    String   @unique // SHA-256 hash of the token
+  expiresAt    DateTime
+  invalidated  Boolean  @default(false)
+  createdAt    DateTime @default(now())
+
+  session      AttendanceSession @relation(fields: [sessionId], references: [id])
+
+  @@index([sessionId, version])
+  @@index([tokenHash])
+}
+
+// =====================================================
+// Student Submission
+// =====================================================
+model Submission {
+  id                String   @id @default(cuid())
+  sessionId         String
+  name              String
+  enrollmentNumber  String
+  idempotencyKey    String   @unique
+
+  // Location data
+  latitude          Float?
+  longitude         Float?
+  accuracy          Float?
+  sampleCount       Int      @default(0)
+  locationDenied    Boolean  @default(false)
+
+  // Distance (computed on submit)
+  distanceFromBase  Float?
+
+  // Timestamps
+  browserTimestamp   DateTime?
+  serverTimestamp    DateTime @default(now())
+
+  // QR version used
+  qrVersion         Int?
+
+  // Risk assessment
+  autoRiskScore     Int      @default(0)
+  autoRiskColor     String   @default("green") // green | orange | red
+  riskFactorsJson   String?  // JSON array of RiskFactor
+
+  // Faculty review
+  facultyRiskColor  String?  // green | orange | red (null = not reviewed)
+  facultyDecision   String   @default("pending") // approved | rejected | pending
+  remarks           String?
+
+  // Metadata
+  userAgent         String?
+
+  session           AttendanceSession @relation(fields: [sessionId], references: [id])
+  locationSamples   LocationSample[]
+  riskOverrides     RiskOverride[]
+
+  @@unique([sessionId, enrollmentNumber])
+  @@index([sessionId])
+  @@index([enrollmentNumber])
+  @@index([autoRiskColor])
+  @@index([serverTimestamp])
+}
+
+// =====================================================
+// Location Samples (raw GPS readings)
+// =====================================================
+model LocationSample {
+  id           String   @id @default(cuid())
+  submissionId String
+  latitude     Float
+  longitude    Float
+  accuracy     Float
+  timestamp    DateTime
+  sampleIndex  Int
+
+  submission   Submission @relation(fields: [submissionId], references: [id])
+
+  @@index([submissionId])
+}
+
+// =====================================================
+// Manual Attendance
+// =====================================================
+model ManualAttendance {
+  id               String   @id @default(cuid())
+  sessionId        String
+  facultyId        String
+  name             String
+  enrollmentNumber String
+  status           String   @default("present") // present | absent
+  reason           String?
+  remarks          String?
+  createdAt        DateTime @default(now())
+
+  session          AttendanceSession @relation(fields: [sessionId], references: [id])
+  faculty          User              @relation(fields: [facultyId], references: [id])
+
+  @@unique([sessionId, enrollmentNumber])
+  @@index([sessionId])
+}
+
+// =====================================================
+// Risk Override History (append-only audit log)
+// =====================================================
+model RiskOverride {
+  id              String   @id @default(cuid())
+  submissionId    String
+  facultyId       String
+  originalColor   String
+  newColor        String
+  originalDecision String?
+  newDecision     String
+  reason          String?
+  createdAt       DateTime @default(now())
+
+  submission      Submission @relation(fields: [submissionId], references: [id])
+  faculty         User       @relation(fields: [facultyId], references: [id])
+
+  @@index([submissionId])
+}
+
+// =====================================================
+// Suspicious Attempt Logs
+// =====================================================
+model SuspiciousAttempt {
+  id               String   @id @default(cuid())
+  sessionId        String
+  enrollmentNumber String?
+  name             String?
+  reason           String   // "duplicate" | "expired_qr" | "invalid_token" | "ended_session"
+  ipAddress        String?
+  userAgent        String?
+  details          String?
+  createdAt        DateTime @default(now())
+
+  session          AttendanceSession @relation(fields: [sessionId], references: [id])
+
+  @@index([sessionId])
+  @@index([enrollmentNumber])
+}
+
+// =====================================================
+// Export History
+// =====================================================
+model ExportHistory {
+  id          String   @id @default(cuid())
+  sessionId   String
+  facultyId   String
+  fileName    String
+  recordCount Int
+  createdAt   DateTime @default(now())
+
+  session     AttendanceSession @relation(fields: [sessionId], references: [id])
+  faculty     User              @relation(fields: [facultyId], references: [id])
+
+  @@index([sessionId])
+}
