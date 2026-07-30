@@ -16,7 +16,7 @@ export default function DashboardHome() {
         const res = await fetch('/api/sessions');
         if (!res.ok) throw new Error('Failed to fetch sessions');
         const data = await res.json();
-        setSessions(data.sessions || []);
+        setSessions(data.data || []);
       } catch (err) {
         setError('Error loading sessions.');
       } finally {
