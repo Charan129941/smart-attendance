@@ -117,7 +117,7 @@ model QrVersion {
   invalidated  Boolean  @default(false)
   createdAt    DateTime @default(now())
 
-  session      AttendanceSession @relation(fields: [sessionId], references: [id])
+  session      AttendanceSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
   @@index([sessionId, version])
   @@index([tokenHash])
@@ -163,7 +163,7 @@ model Submission {
   // Metadata
   userAgent         String?
 
-  session           AttendanceSession @relation(fields: [sessionId], references: [id])
+  session           AttendanceSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
   locationSamples   LocationSample[]
   riskOverrides     RiskOverride[]
 
@@ -186,7 +186,7 @@ model LocationSample {
   timestamp    DateTime
   sampleIndex  Int
 
-  submission   Submission @relation(fields: [submissionId], references: [id])
+  submission   Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
 
   @@index([submissionId])
 }
@@ -205,7 +205,7 @@ model ManualAttendance {
   remarks          String?
   createdAt        DateTime @default(now())
 
-  session          AttendanceSession @relation(fields: [sessionId], references: [id])
+  session          AttendanceSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
   faculty          User              @relation(fields: [facultyId], references: [id])
 
   @@unique([sessionId, enrollmentNumber])
@@ -226,7 +226,7 @@ model RiskOverride {
   reason          String?
   createdAt       DateTime @default(now())
 
-  submission      Submission @relation(fields: [submissionId], references: [id])
+  submission      Submission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
   faculty         User       @relation(fields: [facultyId], references: [id])
 
   @@index([submissionId])
@@ -246,7 +246,7 @@ model SuspiciousAttempt {
   details          String?
   createdAt        DateTime @default(now())
 
-  session          AttendanceSession @relation(fields: [sessionId], references: [id])
+  session          AttendanceSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
 
   @@index([sessionId])
   @@index([enrollmentNumber])
@@ -263,7 +263,7 @@ model ExportHistory {
   recordCount Int
   createdAt   DateTime @default(now())
 
-  session     AttendanceSession @relation(fields: [sessionId], references: [id])
+  session     AttendanceSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
   faculty     User              @relation(fields: [facultyId], references: [id])
 
   @@index([sessionId])

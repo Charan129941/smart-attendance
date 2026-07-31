@@ -159,34 +159,10 @@ export async function DELETE(
       return NextResponse.json({ success: false, error: 'Not found' }, { status: 404 });
     }
 
-    // Prisma doesn't natively support cascading deletes on all our relations if not defined in schema with onDelete: Cascade.
-    // So we need to delete child records manually in a transaction.
-    await prisma.$transaction([
-      prisma.locationSample.deleteMany({
-        where: { submission: { sessionId: id } },
-      }),
-      prisma.riskOverride.deleteMany({
-        where: { submission: { sessionId: id } },
-      }),
-      prisma.submission.deleteMany({
-        where: { sessionId: id },
-      }),
-      prisma.manualAttendance.deleteMany({
-        where: { sessionId: id },
-      }),
-      prisma.suspiciousAttempt.deleteMany({
-        where: { sessionId: id },
-      }),
-      prisma.qrVersion.deleteMany({
-        where: { sessionId: id },
-      }),
-      prisma.exportHistory.deleteMany({
-        where: { sessionId: id },
-      }),
-      prisma.attendanceSession.delete({
-        where: { id },
-      }),
-    ]);
+    // Prisma cascade deletes will handle the rest
+    await prisma.attendanceSession.delete({
+      where: { id },
+    });
 
     return NextResponse.json({ success: true, data: { deleted: true } });
   } catch (error: any) {
