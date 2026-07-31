@@ -298,10 +298,7 @@ export default function ActiveSessionPage({ params }: { params: Promise<{ id: st
             
             <SubmissionsTable 
               submissions={filteredSubmissions}
-              onOverrideClick={(sub) => {
-                setOverrideTarget(sub);
-                setShowOverrideModal(true);
-              }}
+              onOverrideClick={(sub) => setOverrideTarget(sub)}
               onDecisionChange={handleQuickDecision}
             />
           </div>
