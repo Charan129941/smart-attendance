@@ -34,7 +34,8 @@ export async function POST(
     });
 
     const newVersion = attendanceSession.currentQrVersion + 1;
-    const expiresAt = Date.now() + attendanceSession.sessionDuration * 60 * 1000; // or use qrRefreshInterval if that's preferred
+    const intervalSecs = attendanceSession.qrRefreshInterval || 15;
+    const expiresAt = Date.now() + intervalSecs * 1000;
 
     const token = createQrToken(id, newVersion, expiresAt);
     const tokenHash = hashToken(token);
@@ -88,27 +89,30 @@ export async function GET(
       return NextResponse.json({ success: false, error: 'Not found' }, { status: 404 });
     }
 
-    // Usually we don't return a new QR token on GET, we might want to return the last active token 
-    // but generating it from scratch requires knowing the exact expiresAt we used. Let's just create a new one to be safe, or just return the version number if the UI only needs that.
-    // Assuming UI expects the current active QR token data URL on refresh, which means we might want to just ROTATE it or we should store the plain token? We can't store plain tokens, so we create a new one.
-    // Wait, the prompt says "GET: Get current QR data URL and version info."
-    // Actually, without the original signature, we can't recreate the QR URL exactly for the existing token because we don't store the raw token.
-    // So on a GET request, we can just issue a new token for the CURRENT version if we want, OR we can rotate it. Let's create a new token with the same version.
-    
-    const version = attendanceSession.currentQrVersion;
-    const expiresAt = Date.now() + attendanceSession.sessionDuration * 60 * 1000;
-    
-    const token = createQrToken(id, version, expiresAt);
-    const tokenHash = hashToken(token);
-    
-    await prisma.qrVersion.create({
-      data: {
-        sessionId: id,
-        version,
-        tokenHash,
-        expiresAt: new Date(expiresAt),
-      },
+    const latestQr = await prisma.qrVersion.findFirst({
+      where: { sessionId: id, invalidated: false },
+      orderBy: { createdAt: 'desc' },
     });
+
+    const intervalSecs = attendanceSession.qrRefreshInterval || 15;
+    let version = attendanceSession.currentQrVersion || 1;
+    let expiresAt = latestQr ? latestQr.expiresAt.getTime() : Date.now() + intervalSecs * 1000;
+
+    if (!latestQr || latestQr.expiresAt.getTime() <= Date.now()) {
+      expiresAt = Date.now() + intervalSecs * 1000;
+      const newToken = createQrToken(id, version, expiresAt);
+      const tokenHash = hashToken(newToken);
+      await prisma.qrVersion.create({
+        data: {
+          sessionId: id,
+          version,
+          tokenHash,
+          expiresAt: new Date(expiresAt),
+        },
+      });
+    }
+
+    const token = createQrToken(id, version, expiresAt);
     const host = req.headers.get('host');
     const protocol = req.headers.get('x-forwarded-proto') || (host?.includes('localhost') ? 'http' : 'https');
     const hostUrl = host ? `${protocol}://${host}` : undefined;

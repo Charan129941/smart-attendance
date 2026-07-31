@@ -92,7 +92,7 @@ export default function ActiveSessionPage({ params }: { params: Promise<{ id: st
     if (session && session.status === 'active' && !qrDataUrl) {
       fetchQr();
     }
-  }, [session]);
+  }, [session?.id, session?.status]);
 
   const handleEndSession = async () => {
     if (!confirm('Are you sure you want to end this session? Students will no longer be able to mark attendance.')) return;

@@ -11,6 +11,8 @@ export default function CountdownTimer({ targetDate, onComplete }: CountdownTime
   const [seconds, setSeconds] = useState(0);
 
   useEffect(() => {
+    let hasCompleted = false;
+
     const updateTimer = () => {
       const now = new Date().getTime();
       const target = targetDate.getTime();
@@ -18,16 +20,17 @@ export default function CountdownTimer({ targetDate, onComplete }: CountdownTime
       
       setSeconds(diff);
       
-      if (diff === 0) {
+      if (diff === 0 && !hasCompleted) {
+        hasCompleted = true;
         onComplete();
       }
     };
 
-    updateTimer(); // Initial call
+    updateTimer();
     const interval = setInterval(updateTimer, 1000);
 
     return () => clearInterval(interval);
-  }, [targetDate, onComplete]);
+  }, [targetDate]);
 
   return (
     <div className="text-center">
