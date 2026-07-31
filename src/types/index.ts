@@ -113,6 +113,7 @@ export interface SessionSummary {
   duplicateAttempts: number;
   notes?: string | null;
   qrRefreshInterval: number;
+  sessionDuration: number;
   createdAt: string;
 }
 
