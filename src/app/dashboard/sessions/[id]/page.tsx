@@ -164,6 +164,24 @@ export default function ActiveSessionPage({ params }: { params: Promise<{ id: st
     return matchesSearch && matchesFilter;
   });
 
+  const handleBulkApprove = async (submissionIds: string[]) => {
+    try {
+      const res = await fetch(`/api/sessions/${id}/override`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ submissionIds, decision: 'approved', riskColor: 'green', reason: 'Bulk admin approval for location cluster' })
+      });
+      if (res.ok) fetchSessionData();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const pendingOrFlagged = submissions.filter(s => 
+    (!s.facultyDecision || s.facultyDecision === 'pending') && 
+    (s.autoRiskColor === 'orange' || s.autoRiskColor === 'red' || (s.distanceFromBase && s.distanceFromBase > 10))
+  );
+
   return (
     <div className="animate-fade-in">
       {/* Top Bar */}
@@ -196,6 +214,27 @@ export default function ActiveSessionPage({ params }: { params: Promise<{ id: st
           )}
         </div>
       </div>
+
+      {pendingOrFlagged.length > 0 && (
+        <div className="card mb-6 border-l-4 border-amber-500 bg-amber-500/10 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div>
+            <h4 className="font-bold text-amber-400 flex items-center gap-2 text-base">
+              <span>⚠️</span> Location Match Prompt ({pendingOrFlagged.length} Students Flagged)
+            </h4>
+            <p className="text-xs text-muted mt-1">
+              Multiple students are reporting location ~10–30m away from classroom base (GPS drift). Do you want to accept all flagged students for this session?
+            </p>
+          </div>
+          <div className="flex gap-2 shrink-0">
+            <button 
+              className="btn btn-primary bg-emerald-600 hover:bg-emerald-500 text-white text-xs px-3 py-2"
+              onClick={() => handleBulkApprove(pendingOrFlagged.map(s => s.id))}
+            >
+              ✓ Accept All ({pendingOrFlagged.length})
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left Column (QR & Actions) */}
