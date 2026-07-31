@@ -8,7 +8,11 @@ export default function StudentAttendancePage({ params }: { params: Promise<{ to
   const [token, setToken] = useState<string | null>(null);
 
   useEffect(() => {
-    params.then(p => setToken(p.token));
+    if (params instanceof Promise) {
+      params.then(p => setToken(p.token)).catch(console.error);
+    } else {
+      setToken((params as any).token);
+    }
   }, [params]);
 
   const [loading, setLoading] = useState(true);

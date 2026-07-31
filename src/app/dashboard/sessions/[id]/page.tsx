@@ -26,7 +26,11 @@ export default function ActiveSessionPage({ params }: { params: Promise<{ id: st
   const [error, setError] = useState('');
 
   useEffect(() => {
-    params.then(p => setId(p.id));
+    if (params instanceof Promise) {
+      params.then(p => setId(p.id)).catch(console.error);
+    } else {
+      setId((params as any).id);
+    }
   }, [params]);
   
   const [searchQuery, setSearchQuery] = useState('');
