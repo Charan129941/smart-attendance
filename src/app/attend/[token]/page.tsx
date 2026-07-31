@@ -191,13 +191,22 @@ export default function StudentAttendancePage({ params }: { params: Promise<{ to
             />
           </div>
 
-          <div className="mb-6 p-3 rounded-lg text-sm flex items-center gap-3 bg-secondary">
+          <div className="mb-6 p-3 rounded-lg text-sm bg-secondary">
             {locationStatus === 'requesting' || locationStatus === 'capturing' ? (
-              <><span className="spinner" style={{ width: '16px', height: '16px', borderWidth: '2px' }}></span> <span>Locating you...</span></>
+              <div className="flex items-center gap-3"><span className="spinner" style={{ width: '16px', height: '16px', borderWidth: '2px' }}></span> <span>Locating you...</span></div>
             ) : locationStatus === 'success' ? (
-              <><span className="text-safe text-lg">✓</span> <span>Location verified</span></>
+              <div className="flex items-center gap-3"><span className="text-safe text-lg">✓</span> <span>Location verified</span></div>
             ) : (
-              <><span className="text-danger text-lg">✕</span> <span className="text-danger">Location required. Please allow access.</span></>
+              <div>
+                <div className="flex items-center gap-3 mb-2"><span className="text-danger text-lg">✕</span> <span className="text-danger">Location access denied or failed.</span></div>
+                <button 
+                  type="button"
+                  onClick={startLocationCapture}
+                  className="btn btn-secondary w-full text-sm py-2"
+                >
+                  🔄 Retry Location Access
+                </button>
+              </div>
             )}
           </div>
 
