@@ -84,7 +84,7 @@ export default function ActiveSessionPage({ params }: { params: Promise<{ id: st
 
   useEffect(() => {
     fetchSessionData();
-    const interval = setInterval(fetchSessionData, 5000);
+    const interval = setInterval(fetchSessionData, 10000);
     return () => clearInterval(interval);
   }, [id]);
 

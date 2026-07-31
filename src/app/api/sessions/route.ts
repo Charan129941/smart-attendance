@@ -18,30 +18,41 @@ export async function GET(req: NextRequest) {
       include: {
         class: true,
         subject: true,
-        submissions: true,
-        manualAttendances: true,
-        suspiciousAttempts: true,
+        _count: {
+          select: {
+            submissions: true,
+            manualAttendances: true,
+            suspiciousAttempts: true,
+          }
+        },
       },
       orderBy: { createdAt: 'desc' },
     });
 
-    const result = sessions.map((s: any) => ({
-      id: s.id,
-      className: s.class.name,
-      section: s.class.section,
-      subject: s.subject.name,
-      date: s.date,
-      period: s.period,
-      status: s.status,
-      counts: {
-        total: s.submissions.length,
-        green: s.submissions.filter((sub: any) => sub.autoRiskColor === 'green').length,
-        orange: s.submissions.filter((sub: any) => sub.autoRiskColor === 'orange').length,
-        red: s.submissions.filter((sub: any) => sub.autoRiskColor === 'red').length,
-        manual: s.manualAttendances.length,
-        duplicates: s.suspiciousAttempts.filter((a: any) => a.reason === 'duplicate').length,
-      },
-      createdAt: s.createdAt,
+    const result = await Promise.all(sessions.map(async (s: any) => {
+      const [greenCount, orangeCount, redCount] = await Promise.all([
+        prisma.submission.count({ where: { sessionId: s.id, autoRiskColor: 'green' } }),
+        prisma.submission.count({ where: { sessionId: s.id, autoRiskColor: 'orange' } }),
+        prisma.submission.count({ where: { sessionId: s.id, autoRiskColor: 'red' } }),
+      ]);
+      return {
+        id: s.id,
+        className: s.class.name,
+        section: s.class.section,
+        subject: s.subject.name,
+        date: s.date,
+        period: s.period,
+        status: s.status,
+        counts: {
+          total: s._count.submissions,
+          green: greenCount,
+          orange: orangeCount,
+          red: redCount,
+          manual: s._count.manualAttendances,
+          duplicates: s._count.suspiciousAttempts,
+        },
+        createdAt: s.createdAt,
+      };
     }));
 
     return NextResponse.json({ success: true, data: result });
