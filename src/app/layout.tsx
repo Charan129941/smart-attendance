@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import './globals.css';
 
 import PWARegister from '@/components/PWARegister';
@@ -6,12 +6,15 @@ import PWARegister from '@/components/PWARegister';
 export const metadata: Metadata = {
   title: 'Smart Attendance',
   description: 'Geolocation and QR-based attendance system',
-  themeColor: '#0a0f1e',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
     title: 'Attendance',
   },
+};
+
+export const viewport: Viewport = {
+  themeColor: '#0a0f1e',
 };
 
 export default function RootLayout({
