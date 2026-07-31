@@ -103,20 +103,28 @@ export async function PATCH(
     }
 
     if (className || section) {
-      const classObj = await prisma.class.upsert({
-        where: { name_section: { name: className || '', section: section || '' } },
-        update: {},
-        create: { name: className || '', section: section || '' },
+      const cName = className || '';
+      const cSec = section || '';
+      let classObj = await prisma.class.findFirst({
+        where: { name: cName, section: cSec },
       });
+      if (!classObj) {
+        classObj = await prisma.class.create({
+          data: { name: cName, section: cSec },
+        });
+      }
       updateData.classId = classObj.id;
     }
 
     if (subject) {
-      const subjectObj = await prisma.subject.upsert({
+      let subjectObj = await prisma.subject.findFirst({
         where: { name: subject },
-        update: {},
-        create: { name: subject },
       });
+      if (!subjectObj) {
+        subjectObj = await prisma.subject.create({
+          data: { name: subject },
+        });
+      }
       updateData.subjectId = subjectObj.id;
     }
 
