@@ -27,15 +27,10 @@ export async function POST(
       return NextResponse.json({ success: false, error: 'Session is not active' }, { status: 400 });
     }
 
-    // Invalidate previous ones
-    await prisma.qrVersion.updateMany({
-      where: { sessionId: id, invalidated: false },
-      data: { invalidated: true },
-    });
-
     const newVersion = attendanceSession.currentQrVersion + 1;
     const intervalSecs = attendanceSession.qrRefreshInterval || 15;
-    const expiresAt = Date.now() + intervalSecs * 1000;
+    // Add 45 seconds of grace period so students with slow internet have time to scan and submit
+    const expiresAt = Date.now() + (intervalSecs + 45) * 1000;
 
     const token = createQrToken(id, newVersion, expiresAt);
     const tokenHash = hashToken(token);
@@ -96,10 +91,10 @@ export async function GET(
 
     const intervalSecs = attendanceSession.qrRefreshInterval || 15;
     let version = attendanceSession.currentQrVersion || 1;
-    let expiresAt = latestQr ? latestQr.expiresAt.getTime() : Date.now() + intervalSecs * 1000;
+    let expiresAt = latestQr ? latestQr.expiresAt.getTime() : Date.now() + (intervalSecs + 45) * 1000;
 
     if (!latestQr || latestQr.expiresAt.getTime() <= Date.now()) {
-      expiresAt = Date.now() + intervalSecs * 1000;
+      expiresAt = Date.now() + (intervalSecs + 45) * 1000;
       const newToken = createQrToken(id, version, expiresAt);
       const tokenHash = hashToken(newToken);
       await prisma.qrVersion.create({
