@@ -9,7 +9,7 @@ cd /d "%~dp0"
 set PATH=%PATH%;C:\Program Files\nodejs
 
 echo Starting local attendance server...
-start /b node_modules\.bin\next dev -H 0.0.0.0 -p 3000 > nul 2>&1
+start /b node_modules\.bin\next dev -p 3000 > nul 2>&1
 
 echo Server starting on http://localhost:3000
 echo Opening app window...
