@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -11,11 +11,25 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [successMsg, setSuccessMsg] = useState('');
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const msg = params.get('message');
+      if (msg) {
+        setSuccessMsg(msg);
+        // Clear it from URL
+        window.history.replaceState({}, '', '/login');
+      }
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
+    setSuccessMsg('');
 
     try {
       const res = await signIn('credentials', {
@@ -47,17 +61,23 @@ export default function LoginPage() {
           </div>
         )}
 
+        {successMsg && (
+          <div className="mb-4 p-3 badge-green" style={{ borderRadius: 'var(--radius-sm)' }}>
+            {successMsg}
+          </div>
+        )}
+
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label className="form-label" htmlFor="email">Email or User ID</label>
+            <label className="form-label" htmlFor="email">Email Address</label>
             <input
               id="email"
-              type="text"
+              type="email"
               required
               className="form-input"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="admin@college.edu or hello"
+              placeholder="faculty@college.edu"
             />
           </div>
           
@@ -84,12 +104,12 @@ export default function LoginPage() {
           </button>
         </form>
 
-        <p className="text-center text-sm text-muted mt-6">
-          Don&apos;t have an account?{' '}
-          <Link href="/register" className="text-accent hover:underline">
-            Sign Up
+        <div className="mt-6 text-center text-sm text-muted">
+          Don't have an account?{' '}
+          <Link href="/signup" className="text-primary hover:underline">
+            Sign up
           </Link>
-        </p>
+        </div>
       </div>
     </div>
   );

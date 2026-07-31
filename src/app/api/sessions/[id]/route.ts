@@ -75,11 +75,8 @@ export async function PATCH(
     }
 
     const { id } = await params;
-    const { status } = await req.json();
-
-    if (!['active', 'paused', 'ended'].includes(status)) {
-      return NextResponse.json({ success: false, error: 'Invalid status' }, { status: 400 });
-    }
+    const body = await req.json();
+    const { status, className, section, subject, date, period, notes } = body;
 
     const attendanceSession = await prisma.attendanceSession.findUnique({
       where: { id, facultyId: session.user.id },
@@ -89,22 +86,52 @@ export async function PATCH(
       return NextResponse.json({ success: false, error: 'Not found' }, { status: 404 });
     }
 
-    const updateData: any = { status };
-    if (status === 'ended') {
-      updateData.endedAt = new Date();
+    const updateData: any = {};
+
+    if (status) {
+      if (!['active', 'paused', 'ended'].includes(status)) {
+        return NextResponse.json({ success: false, error: 'Invalid status' }, { status: 400 });
+      }
+      updateData.status = status;
+      if (status === 'ended') {
+        updateData.endedAt = new Date();
+        await prisma.qrVersion.updateMany({
+          where: { sessionId: id, invalidated: false },
+          data: { invalidated: true },
+        });
+      }
     }
+
+    if (className || section) {
+      const classObj = await prisma.class.upsert({
+        where: { name_section: { name: className || '', section: section || '' } },
+        update: {},
+        create: { name: className || '', section: section || '' },
+      });
+      updateData.classId = classObj.id;
+    }
+
+    if (subject) {
+      const subjectObj = await prisma.subject.upsert({
+        where: { name: subject },
+        update: {},
+        create: { name: subject },
+      });
+      updateData.subjectId = subjectObj.id;
+    }
+
+    if (date !== undefined) updateData.date = date;
+    if (period !== undefined) updateData.period = period;
+    if (notes !== undefined) updateData.notes = notes;
 
     const updated = await prisma.attendanceSession.update({
       where: { id },
       data: updateData,
+      include: {
+        class: true,
+        subject: true,
+      }
     });
-
-    if (status === 'ended') {
-      await prisma.qrVersion.updateMany({
-        where: { sessionId: id, invalidated: false },
-        data: { invalidated: true },
-      });
-    }
 
     return NextResponse.json({ success: true, data: updated });
   } catch (error: any) {
@@ -129,15 +156,39 @@ export async function DELETE(
     });
 
     if (!attendanceSession) {
-      return NextResponse.json({ success: false, error: 'Session not found' }, { status: 404 });
+      return NextResponse.json({ success: false, error: 'Not found' }, { status: 404 });
     }
 
-    // Cascade delete is set in schema, so this will remove all related records
-    await prisma.attendanceSession.delete({
-      where: { id },
-    });
+    // Prisma doesn't natively support cascading deletes on all our relations if not defined in schema with onDelete: Cascade.
+    // So we need to delete child records manually in a transaction.
+    await prisma.$transaction([
+      prisma.locationSample.deleteMany({
+        where: { submission: { sessionId: id } },
+      }),
+      prisma.riskOverride.deleteMany({
+        where: { submission: { sessionId: id } },
+      }),
+      prisma.submission.deleteMany({
+        where: { sessionId: id },
+      }),
+      prisma.manualAttendance.deleteMany({
+        where: { sessionId: id },
+      }),
+      prisma.suspiciousAttempt.deleteMany({
+        where: { sessionId: id },
+      }),
+      prisma.qrVersion.deleteMany({
+        where: { sessionId: id },
+      }),
+      prisma.exportHistory.deleteMany({
+        where: { sessionId: id },
+      }),
+      prisma.attendanceSession.delete({
+        where: { id },
+      }),
+    ]);
 
-    return NextResponse.json({ success: true, message: 'Session deleted successfully' });
+    return NextResponse.json({ success: true, data: { deleted: true } });
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }

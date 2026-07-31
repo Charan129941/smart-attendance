@@ -15,23 +15,7 @@ export default function DashboardHome() {
       const res = await fetch('/api/sessions');
       if (!res.ok) throw new Error('Failed to fetch sessions');
       const data = await res.json();
-      // Map API response to Session type
-      const mapped = (data.data || []).map((s: any) => ({
-        id: s.sessionId,
-        className: s.className,
-        section: s.section,
-        subject: s.subject,
-        date: s.date,
-        period: s.period,
-        status: s.status,
-        totalSubmissions: s.counts?.total || 0,
-        greenCount: s.counts?.green || 0,
-        orangeCount: s.counts?.orange || 0,
-        redCount: s.counts?.red || 0,
-        manualCount: s.counts?.manual || 0,
-        createdAt: s.createdAt,
-      }));
-      setSessions(mapped);
+      setSessions(data.data || []);
     } catch (err) {
       setError('Error loading sessions.');
     } finally {
@@ -43,17 +27,23 @@ export default function DashboardHome() {
     fetchSessions();
   }, []);
 
-  const handleDeleteSession = async (id: string) => {
+  const handleDelete = async (id: string) => {
+    if (!confirm('Are you sure you want to permanently delete this session and all its data? This cannot be undone.')) {
+      return;
+    }
+    
     try {
-      const res = await fetch(`/api/sessions/${id}`, { method: 'DELETE' });
+      const res = await fetch(`/api/sessions/${id}`, {
+        method: 'DELETE',
+      });
       if (res.ok) {
         setSessions(prev => prev.filter(s => s.id !== id));
       } else {
-        const data = await res.json();
-        alert(data.error || 'Failed to delete session');
+        alert('Failed to delete session');
       }
     } catch (err) {
-      alert('Failed to delete session');
+      console.error(err);
+      alert('Error deleting session');
     }
   };
 
@@ -85,11 +75,10 @@ export default function DashboardHome() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {sessions.map(session => (
-            <SessionCard key={session.id} session={session} onDelete={handleDeleteSession} />
+            <SessionCard key={session.id} session={session} onDelete={() => handleDelete(session.id)} />
           ))}
         </div>
       )}
     </div>
   );
 }
-

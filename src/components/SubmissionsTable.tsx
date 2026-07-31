@@ -10,11 +10,8 @@ interface SubmissionsTableProps {
 
 export default function SubmissionsTable({ submissions, onOverrideClick }: SubmissionsTableProps) {
   const getRelativeTime = (dateString: string) => {
-    if (!dateString) return 'Unknown time';
-    const parsedDate = new Date(dateString);
-    if (isNaN(parsedDate.getTime())) return 'Invalid time';
     const rtf = new Intl.RelativeTimeFormat('en', { numeric: 'auto' });
-    const diff = new Date().getTime() - parsedDate.getTime();
+    const diff = new Date().getTime() - new Date(dateString).getTime();
     const diffInMinutes = Math.round(diff / 60000);
     if (diffInMinutes < 1) return 'Just now';
     if (diffInMinutes < 60) return rtf.format(-diffInMinutes, 'minute');

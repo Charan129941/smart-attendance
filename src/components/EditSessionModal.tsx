@@ -1,103 +1,101 @@
 'use client';
 
 import { useState } from 'react';
+import { Session } from '@/types';
 
 interface EditSessionModalProps {
-  session: {
-    id: string;
-    className: string;
-    section?: string;
-    subject: string;
-    date: string;
-    period: string;
-    notes?: string;
-  };
+  session: Session;
   onClose: () => void;
-  onSave: (data: { className: string; section: string; subject: string; date: string; period: string; notes: string }) => void;
+  onSave: (data: Partial<Session>) => void;
 }
 
 export default function EditSessionModal({ session, onClose, onSave }: EditSessionModalProps) {
-  const [formData, setFormData] = useState({
-    className: session.className || '',
-    section: session.section || '',
-    subject: session.subject || '',
-    date: session.date || '',
-    period: session.period || '',
-    notes: session.notes || '',
-  });
+  const [className, setClassName] = useState(session.className || '');
+  const [subject, setSubject] = useState(session.subject || '');
+  const [section, setSection] = useState(session.section || '');
+  const [date, setDate] = useState(session.date || '');
+  const [period, setPeriod] = useState(session.period || '');
+  const [notes, setNotes] = useState(session.notes || '');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSave(formData);
+    onSave({ className, subject, section, date, period, notes });
   };
 
   return (
     <div className="modal-overlay">
-      <div className="modal-content">
+      <div className="modal-content max-w-lg">
         <div className="modal-header">
           <h2 className="modal-title">Edit Session Details</h2>
           <button className="modal-close" onClick={onClose}>&times;</button>
         </div>
-        
-        <form onSubmit={handleSubmit}>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
             <div className="form-group">
               <label className="form-label">Class Name</label>
-              <input 
-                required 
-                className="form-input" 
-                value={formData.className} 
-                onChange={e => setFormData({...formData, className: e.target.value})} 
-                placeholder="e.g. CS-3A" 
+              <input
+                type="text"
+                className="form-input"
+                value={className}
+                onChange={(e) => setClassName(e.target.value)}
+                required
               />
             </div>
             <div className="form-group">
               <label className="form-label">Section</label>
-              <input 
-                className="form-input" 
-                value={formData.section} 
-                onChange={e => setFormData({...formData, section: e.target.value})} 
-                placeholder="e.g. A" 
+              <input
+                type="text"
+                className="form-input"
+                value={section}
+                onChange={(e) => setSection(e.target.value)}
+                required
               />
             </div>
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Subject</label>
+            <input
+              type="text"
+              className="form-input"
+              value={subject}
+              onChange={(e) => setSubject(e.target.value)}
+              required
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
             <div className="form-group">
-              <label className="form-label">Subject</label>
-              <input 
-                required 
-                className="form-input" 
-                value={formData.subject} 
-                onChange={e => setFormData({...formData, subject: e.target.value})} 
-                placeholder="e.g. Data Structures" 
-              />
-            </div>
-            <div className="form-group">
-              <label className="form-label">Date</label>
-              <input 
-                type="date" 
-                required 
-                className="form-input" 
-                value={formData.date} 
-                onChange={e => setFormData({...formData, date: e.target.value})} 
+              <label className="form-label">Date (YYYY-MM-DD)</label>
+              <input
+                type="text"
+                className="form-input"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                required
               />
             </div>
             <div className="form-group">
               <label className="form-label">Period</label>
-              <input 
-                required 
-                className="form-input" 
-                value={formData.period} 
-                onChange={e => setFormData({...formData, period: e.target.value})} 
+              <input
+                type="text"
+                className="form-input"
+                value={period}
+                onChange={(e) => setPeriod(e.target.value)}
+                required
               />
             </div>
-            <div className="form-group">
-              <label className="form-label">Notes</label>
-              <input 
-                className="form-input" 
-                value={formData.notes} 
-                onChange={e => setFormData({...formData, notes: e.target.value})} 
-                placeholder="Topic or remarks..." 
-              />
-            </div>
+          </div>
+
+          <div className="form-group">
+            <label className="form-label">Notes (Optional)</label>
+            <input
+              type="text"
+              className="form-input"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+            />
           </div>
 
           <div className="flex justify-end gap-2 mt-6">

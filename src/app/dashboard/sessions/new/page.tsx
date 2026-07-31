@@ -83,7 +83,7 @@ export default function CreateSessionPage() {
   };
 
   return (
-    <div className="max-w-2xl mx-auto">
+    <div className="max-w-2xl mx-auto animate-fade-in">
       <button 
         onClick={() => router.push('/dashboard')} 
         className="text-muted hover:text-primary mb-4 flex items-center gap-2 text-sm font-medium transition-colors"
