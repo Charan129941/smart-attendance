@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useMemo, use } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Session, AttendanceSubmission } from '@/types';
 import QRDisplay from '@/components/QRDisplay';
 import StatsBar from '@/components/StatsBar';
@@ -13,9 +13,9 @@ import { useRouter } from 'next/navigation';
 import { haversineDistance } from '@/lib/geo';
 
 export default function ActiveSessionPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params);
   const router = useRouter();
 
+  const [id, setId] = useState<string | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [submissions, setSubmissions] = useState<AttendanceSubmission[]>([]);
   const [qrDataUrl, setQrDataUrl] = useState('');
@@ -24,6 +24,10 @@ export default function ActiveSessionPage({ params }: { params: Promise<{ id: st
   
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    params.then(p => setId(p.id));
+  }, [params]);
   
   const [searchQuery, setSearchQuery] = useState('');
   const [activeFilter, setActiveFilter] = useState('All');
@@ -67,6 +71,7 @@ export default function ActiveSessionPage({ params }: { params: Promise<{ id: st
   };
 
   useEffect(() => {
+    if (!id) return;
     fetchSessionData();
     const interval = setInterval(fetchSessionData, 5000);
     return () => clearInterval(interval);

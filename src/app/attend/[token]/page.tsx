@@ -1,11 +1,15 @@
 'use client';
 
-import { useEffect, useState, use } from 'react';
+import { useEffect, useState } from 'react';
 import { STUDENT_FEEDBACK } from '@/lib/constants';
 import { RiskColor } from '@/types';
 
 export default function StudentAttendancePage({ params }: { params: Promise<{ token: string }> }) {
-  const { token } = use(params);
+  const [token, setToken] = useState<string | null>(null);
+
+  useEffect(() => {
+    params.then(p => setToken(p.token));
+  }, [params]);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -23,6 +27,7 @@ export default function StudentAttendancePage({ params }: { params: Promise<{ to
 
   // 1. Validate Token on Mount
   useEffect(() => {
+    if (!token) return;
     setIdempotencyKey(Math.random().toString(36).substring(2) + Date.now().toString(36));
     
     const validateToken = async () => {
