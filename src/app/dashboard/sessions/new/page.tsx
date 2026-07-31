@@ -137,7 +137,15 @@ export default function CreateSessionPage() {
         )}
 
         {step === 2 && (
-          <form onSubmit={handleNext}>
+          <form 
+            onSubmit={handleNext} 
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                handleNext(e as any);
+              }
+            }}
+          >
             <div className="grid grid-cols-1 gap-4">
               <div className="form-group">
                 <label className="form-label">QR Refresh Interval (Seconds)</label>

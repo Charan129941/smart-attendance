@@ -76,7 +76,7 @@ export async function PATCH(
 
     const { id } = await params;
     const body = await req.json();
-    const { status, className, section, subject, date, period, notes } = body;
+    const { status, className, section, subject, date, period, notes, qrRefreshInterval, sessionDuration } = body;
 
     const attendanceSession = await prisma.attendanceSession.findUnique({
       where: { id, facultyId: session.user.id },
@@ -123,6 +123,8 @@ export async function PATCH(
     if (date !== undefined) updateData.date = date;
     if (period !== undefined) updateData.period = period;
     if (notes !== undefined) updateData.notes = notes;
+    if (qrRefreshInterval !== undefined) updateData.qrRefreshInterval = Number(qrRefreshInterval);
+    if (sessionDuration !== undefined) updateData.sessionDuration = Number(sessionDuration);
 
     const updated = await prisma.attendanceSession.update({
       where: { id },

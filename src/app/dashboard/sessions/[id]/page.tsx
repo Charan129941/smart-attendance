@@ -9,6 +9,7 @@ import FilterBar from '@/components/FilterBar';
 import OverrideModal from '@/components/OverrideModal';
 import ManualAttendanceModal from '@/components/ManualAttendanceModal';
 import EditSessionModal from '@/components/EditSessionModal';
+import UpdateSettingsModal from '@/components/UpdateSettingsModal';
 import { useRouter } from 'next/navigation';
 
 export default function ActiveSessionPage({ params }: { params: Promise<{ id: string }> }) {
@@ -30,6 +31,7 @@ export default function ActiveSessionPage({ params }: { params: Promise<{ id: st
   const [overrideTarget, setOverrideTarget] = useState<AttendanceSubmission | null>(null);
   const [showManualModal, setShowManualModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
 
   const fetchSessionData = async () => {
     try {
@@ -177,6 +179,19 @@ export default function ActiveSessionPage({ params }: { params: Promise<{ id: st
     }
   };
 
+  const handleQuickDecision = async (submissionId: string, decision: string) => {
+    try {
+      const res = await fetch(`/api/sessions/${id}/override`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ submissionIds: [submissionId], decision, reason: 'Quick decision from table' })
+      });
+      if (res.ok) fetchSessionData();
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   const pendingOrFlagged = submissions.filter(s => 
     (!s.facultyDecision || s.facultyDecision === 'pending') && 
     (s.autoRiskColor === 'orange' || s.autoRiskColor === 'red' || (s.distanceFromBase && s.distanceFromBase > 10))
@@ -254,17 +269,22 @@ export default function ActiveSessionPage({ params }: { params: Promise<{ id: st
             <button className="btn btn-secondary w-full mb-2" onClick={() => setShowManualModal(true)}>
               + Add Manual Entry
             </button>
+            {isActive && (
+              <button className="btn btn-ghost w-full" onClick={() => setShowSettingsModal(true)}>
+                ⚙️ Update QR/Session Settings
+              </button>
+            )}
           </div>
         </div>
 
         {/* Right Column (Stats & Table) */}
         <div className="lg:col-span-2">
           <StatsBar 
-            total={session.totalSubmissions}
-            green={session.greenCount}
-            orange={session.orangeCount}
-            red={session.redCount}
-            manual={session.manualCount}
+            total={submissions.length}
+            green={submissions.filter(s => s.autoRiskColor === 'green' && !s.isManual).length}
+            orange={submissions.filter(s => s.autoRiskColor === 'orange' && !s.isManual).length}
+            red={submissions.filter(s => s.autoRiskColor === 'red' && !s.isManual).length}
+            manual={submissions.filter(s => s.isManual).length}
             pending={submissions.filter(s => !s.facultyDecision || s.facultyDecision === 'pending').length}
           />
 
@@ -278,7 +298,11 @@ export default function ActiveSessionPage({ params }: { params: Promise<{ id: st
             
             <SubmissionsTable 
               submissions={filteredSubmissions}
-              onOverrideClick={setOverrideTarget}
+              onOverrideClick={(sub) => {
+                setOverrideTarget(sub);
+                setShowOverrideModal(true);
+              }}
+              onDecisionChange={handleQuickDecision}
             />
           </div>
         </div>
@@ -303,6 +327,13 @@ export default function ActiveSessionPage({ params }: { params: Promise<{ id: st
         <EditSessionModal
           session={session}
           onClose={() => setShowEditModal(false)}
+          onSave={handleEditSession}
+        />
+      )}
+      {showSettingsModal && (
+        <UpdateSettingsModal
+          session={session}
+          onClose={() => setShowSettingsModal(false)}
           onSave={handleEditSession}
         />
       )}

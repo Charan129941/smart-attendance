@@ -6,9 +6,10 @@ import RiskBadge from './RiskBadge';
 interface SubmissionsTableProps {
   submissions: AttendanceSubmission[];
   onOverrideClick: (submission: AttendanceSubmission) => void;
+  onDecisionChange?: (submissionId: string, decision: string) => void;
 }
 
-export default function SubmissionsTable({ submissions, onOverrideClick }: SubmissionsTableProps) {
+export default function SubmissionsTable({ submissions, onOverrideClick, onDecisionChange }: SubmissionsTableProps) {
   const getRelativeTime = (dateString: string) => {
     const rtf = new Intl.RelativeTimeFormat('en', { numeric: 'auto' });
     const diff = new Date().getTime() - new Date(dateString).getTime();
@@ -61,9 +62,16 @@ export default function SubmissionsTable({ submissions, onOverrideClick }: Submi
                 <RiskBadge color={sub.autoRiskColor} score={sub.autoRiskScore} />
               </td>
               <td>
-                <span className={`badge ${sub.facultyDecision === 'approved' ? 'badge-green' : sub.facultyDecision === 'rejected' ? 'badge-red' : 'badge-neutral'}`}>
-                  {sub.facultyDecision || 'Pending'}
-                </span>
+                <select 
+                  className={`badge cursor-pointer appearance-none outline-none text-center bg-transparent border-0 ${sub.facultyDecision === 'approved' ? 'badge-green' : sub.facultyDecision === 'rejected' ? 'badge-red' : 'badge-neutral'}`}
+                  value={sub.facultyDecision || 'pending'}
+                  onChange={(e) => onDecisionChange && onDecisionChange(sub.id, e.target.value)}
+                  title="Click to change decision"
+                >
+                  <option value="pending" className="text-black bg-white">Pending</option>
+                  <option value="approved" className="text-black bg-white">Approved</option>
+                  <option value="rejected" className="text-black bg-white">Rejected</option>
+                </select>
               </td>
               <td>
                 <button 
