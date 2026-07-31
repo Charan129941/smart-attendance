@@ -29,12 +29,16 @@ export async function GET(req: NextRequest) {
       orderBy: { createdAt: 'desc' },
     });
 
-    const result = await Promise.all(sessions.map(async (s: any) => {
-      const [greenCount, orangeCount, redCount] = await Promise.all([
-        prisma.submission.count({ where: { sessionId: s.id, autoRiskColor: 'green' } }),
-        prisma.submission.count({ where: { sessionId: s.id, autoRiskColor: 'orange' } }),
-        prisma.submission.count({ where: { sessionId: s.id, autoRiskColor: 'red' } }),
-      ]);
+    const sessionIds = sessions.map(s => s.id);
+    const riskCounts = await prisma.submission.groupBy({
+      by: ['sessionId', 'autoRiskColor'],
+      where: { sessionId: { in: sessionIds } },
+      _count: { _all: true },
+    });
+
+    const result = sessions.map((s: any) => {
+      const getCount = (color: string) => riskCounts.find(r => r.sessionId === s.id && r.autoRiskColor === color)?._count._all || 0;
+      
       return {
         id: s.id,
         className: s.class.name,
@@ -45,15 +49,15 @@ export async function GET(req: NextRequest) {
         status: s.status,
         counts: {
           total: s._count.submissions,
-          green: greenCount,
-          orange: orangeCount,
-          red: redCount,
+          green: getCount('green'),
+          orange: getCount('orange'),
+          red: getCount('red'),
           manual: s._count.manualAttendances,
           duplicates: s._count.suspiciousAttempts,
         },
         createdAt: s.createdAt,
       };
-    }));
+    });
 
     return NextResponse.json({ success: true, data: result });
   } catch (error: any) {
