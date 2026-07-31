@@ -76,11 +76,44 @@ export function hashToken(token: string): string {
   return crypto.createHash('sha256').update(token).digest('hex');
 }
 
+import os from 'os';
+
+function getLanIp(): string {
+  try {
+    const interfaces = os.networkInterfaces();
+    for (const name of Object.keys(interfaces)) {
+      for (const net of interfaces[name] || []) {
+        if (net.family === 'IPv4' && !net.internal) {
+          return net.address;
+        }
+      }
+    }
+  } catch (e) {}
+  return 'localhost';
+}
+
+export function resolvePublicBaseUrl(hostUrl?: string): string {
+  const envBase = process.env.NEXT_PUBLIC_BASE_URL;
+  if (envBase && !envBase.includes('localhost') && !envBase.includes('127.0.0.1')) {
+    return envBase;
+  }
+
+  if (hostUrl) {
+    if (hostUrl.includes('localhost') || hostUrl.includes('127.0.0.1')) {
+      const lanIp = getLanIp();
+      return hostUrl.replace('localhost', lanIp).replace('127.0.0.1', lanIp);
+    }
+    return hostUrl;
+  }
+
+  return envBase || `http://${getLanIp()}:3000`;
+}
+
 /**
  * Build the full attendance URL from a token.
  */
 export function buildAttendanceUrl(token: string, hostUrl?: string): string {
-  const base = hostUrl || BASE_URL;
+  const base = resolvePublicBaseUrl(hostUrl);
   return `${base}/attend/${encodeURIComponent(token)}`;
 }
 
