@@ -26,7 +26,7 @@ export async function GET(req: NextRequest) {
     });
 
     const result = sessions.map((s: any) => ({
-      sessionId: s.id,
+      id: s.id,
       className: s.class.name,
       section: s.class.section,
       subject: s.subject.name,
